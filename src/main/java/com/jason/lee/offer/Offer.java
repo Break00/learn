@@ -76,24 +76,35 @@ public class Offer {
 
     /**
      * No.3 任意重复的数
-     *
-     * @param nums
+     *  边界条件！！！
+     *  数组元素大小为 0 — n-1
+     * @param numbers
      * @return
      */
-    public static int getRepeatedNum(int[] nums) {
-        for (int i = 0; i < nums.length; i++) {
-            while (nums[i] != i) {
-                int temp = nums[i];
-                if (nums[temp] == temp) {
-                    return temp;
+    public static boolean getRepeatedNum(int[] numbers, int length, int[] duplication) {
+        if (numbers == null || length <= 0) {
+            return false;
+        }
+
+        for (int i = 0; i < length; i++) {
+            if (numbers[i] < 0 || numbers[i] > length - 1) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < length; i++) {
+            while (numbers[i] != i) {
+                int temp = numbers[i];
+                if (numbers[temp] == temp) {
+                    duplication[0] = temp;
+                    return true;
                 } else {
-                    nums[i] = nums[temp];
-                    nums[temp] = temp;
+                    numbers[i] = numbers[temp];
+                    numbers[temp] = temp;
                 }
             }
-
         }
-        return -1;
+        return false;
     }
 
     /**
@@ -432,6 +443,7 @@ public class Offer {
     /**
      * No.11 旋转(有序)数组中最小的数字
      * 二分法 + 特例！！！
+     *
      * @param num
      * @return
      */
@@ -450,12 +462,10 @@ public class Offer {
             // 三个未知的数均相等
             if (num[p1] == num[mid] && num[mid] == num[p2]) {
                 return getMinOfArray(num);
-            }
-            else {
+            } else {
                 if (num[mid] > num[p1]) {
                     p1 = mid;
-                }
-                else {
+                } else {
                     p2 = mid;
                 }
             }
