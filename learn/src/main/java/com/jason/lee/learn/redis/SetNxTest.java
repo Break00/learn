@@ -1,4 +1,4 @@
-package com.jason.lee.learn;
+package com.jason.lee.learn.redis;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,28 +12,27 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * 分布式锁
  */
-public class DistributedLock {
-    private Logger logger = LoggerFactory.getLogger(DistributedLock.class);
+public class SetNxTest {
+    private Logger logger = LoggerFactory.getLogger(SetNxTest.class);
     private final ReentrantLock threadLock = new ReentrantLock();
     private Thread lockHolder = null;
-    private long timeOut = 0;
+    private int timeOut = 0;
     private String mutex = "redisLock";
 
-    public DistributedLock() {
+    public SetNxTest() {
     }
 
     /**
      * @param timeOut 超时时间
      * @param mutex   锁名
      */
-    public DistributedLock(long timeOut, String mutex) {
+    public SetNxTest(int timeOut, String mutex) {
         this.timeOut = timeOut;
         this.mutex = mutex;
     }
 
-    public boolean lock(long timeOut, TimeUnit timeUnit) throws Exception {
+    public boolean lock(int timeOut, TimeUnit timeUnit) throws Exception {
         this.timeOut = timeOut;
-        timeOut = timeUnit.toMillis(timeOut);
 
         /**锁过期时间*/
         long acquireTime = System.currentTimeMillis() + timeOut;
@@ -61,16 +60,16 @@ public class DistributedLock {
         long currentTime = System.currentTimeMillis();
         String expire = String.valueOf(timeOut + currentTime);
         if (RedisHelper.setNx(mutex, expire) > 0) {
-            //获得锁
-            RedisHelper.setExpire(expire);
+            //获得锁,设置超时时间 （setnx、expire非原子操作）
+            RedisHelper.setExpire(timeOut);
             return true;
         } else {
             long currentLockTime = RedisHelper.get(mutex);
             /**锁过期*/
             if (Objects.nonNull(currentLockTime) && currentLockTime < currentTime) {
                 long oldLockTime = RedisHelper.getSet(mutex, expire);
-                if (Objects.nonNull(oldLockTime) && oldLockTime == currentTime) {
-                    RedisHelper.setExpire(expire);
+                if (Objects.nonNull(oldLockTime) && oldLockTime < currentTime) {
+                    RedisHelper.setExpire(timeOut);
                     return true;
                 }
             }
@@ -115,8 +114,8 @@ public class DistributedLock {
             jedis.del(key);
         }
 
-        public static void setExpire(String expire) {
-            jedis.expire(key, Integer.parseInt(expire));
+        public static void setExpire(int timeout) {
+            jedis.expire(key, timeout);
         }
     }
 }
